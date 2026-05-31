@@ -851,114 +851,119 @@
             ctx.quadraticCurveTo(x, y, x + radius, y); ctx.closePath();
         }
 
-        async function captureAndGenerateTwibbon() {
-            const video = document.getElementById('camera-feed');
-            const canvas = document.getElementById('camera-canvas');
-            const btnCap = document.getElementById('btn-capture');
-            const btnProc = document.getElementById('btn-processing');
-            
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            
-            ctx.translate(canvas.width, 0); ctx.scale(-1, 1);
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const photoDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-            
-            btnCap.classList.add('hidden'); btnProc.classList.remove('hidden');
-
-            try {
-                generatedTwibbonURL = await createTwibbonMandiri(photoDataUrl);
-                document.getElementById('twibbon-preview').src = generatedTwibbonURL;
-                document.getElementById('step-kamera').style.display = 'none';
-                document.getElementById('step-hasil').style.display = 'flex';
-            } catch (e) {
-                Swal.fire({ icon: 'error', title: 'Gagal', text: 'Terjadi kesalahan sistem.', confirmButtonColor: '#ED4956' });
-            } finally {
-                btnCap.classList.remove('hidden'); btnProc.classList.add('hidden');
-            }
-        }
-
         async function createTwibbonMandiri(photoDataUrl) {
             const cvs = document.createElement('canvas');
             cvs.width = 1080; cvs.height = 1080;
             const ctx = cvs.getContext('2d');
             const d = currentUserData;
 
+            // Load resources
             const [userPhoto, schoolLogo] = await Promise.all([
                 loadImageUrl(photoDataUrl),
                 loadImageUrl('https://i.ibb.co.com/BVGjXVL7/logo-baru.png') 
             ]);
 
-            // 1. Background Navy Premium
+            // 1. Background Premium Navy to Slate
             const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1080);
-            bgGrad.addColorStop(0, '#0f172a'); // Slate 900
-            bgGrad.addColorStop(1, '#1e3a8a'); // Blue 900
+            bgGrad.addColorStop(0, '#0F172A'); // Slate 900
+            bgGrad.addColorStop(1, '#1E3A8A'); // Blue 900
             ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, 1080, 1080);
 
-            // 2. Garis Emas Geometris
+            // 2. Ornamen Garis Emas Minimalis
             ctx.fillStyle = 'rgba(251, 191, 36, 0.05)'; 
             ctx.beginPath(); ctx.arc(100, 100, 400, 0, Math.PI*2); ctx.fill();
             ctx.beginPath(); ctx.arc(980, 980, 500, 0, Math.PI*2); ctx.fill();
 
-            ctx.strokeStyle = 'rgba(251, 191, 36, 0.15)';
-            ctx.lineWidth = 3;
+            ctx.strokeStyle = 'rgba(251, 191, 36, 0.2)';
+            ctx.lineWidth = 4;
             ctx.beginPath(); ctx.moveTo(-100, 700); ctx.lineTo(500, 1180); ctx.stroke();
             ctx.beginPath(); ctx.moveTo(600, -100); ctx.lineTo(1180, 400); ctx.stroke();
 
-            // 3. Lingkaran Foto Siswa (Tengah)
+            // 3. Lingkaran Foto Siswa (Proporsional di Tengah)
             const photoCx = 540, photoCy = 560, photoRadius = 310;
+            
+            // Bingkai Emas Luar
             ctx.beginPath();
-            ctx.arc(photoCx, photoCy, photoRadius + 15, 0, Math.PI * 2);
-            ctx.fillStyle = '#FBBF24'; ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 25; ctx.fill();
-            ctx.shadowBlur = 0;
+            ctx.arc(photoCx, photoCy, photoRadius + 18, 0, Math.PI * 2);
+            ctx.fillStyle = '#FBBF24'; 
+            ctx.shadowColor = 'rgba(0,0,0,0.5)'; 
+            ctx.shadowBlur = 25; 
+            ctx.fill();
+            ctx.shadowBlur = 0; // Reset
 
-            ctx.beginPath(); ctx.arc(photoCx, photoCy, photoRadius + 6, 0, Math.PI * 2);
-            ctx.fillStyle = '#FFFFFF'; ctx.fill();
+            // Bingkai Putih Dalam
+            ctx.beginPath();
+            ctx.arc(photoCx, photoCy, photoRadius + 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#FFFFFF'; 
+            ctx.fill();
 
+            // Memasukkan & Memotong Foto Sesuai Lingkaran
             if(userPhoto) {
-                ctx.save(); ctx.beginPath(); ctx.arc(photoCx, photoCy, photoRadius, 0, Math.PI * 2); ctx.clip(); 
+                ctx.save(); 
+                ctx.beginPath(); 
+                ctx.arc(photoCx, photoCy, photoRadius, 0, Math.PI * 2); 
+                ctx.clip(); 
+                
                 const targetSize = photoRadius * 2;
                 const imgRatio = userPhoto.width / userPhoto.height;
                 let drawW, drawH, drawX, drawY;
-                if (imgRatio > 1) { drawH = targetSize; drawW = userPhoto.width * (targetSize / userPhoto.height); } 
-                else { drawW = targetSize; drawH = userPhoto.height * (targetSize / userPhoto.width); }
+                
+                if (imgRatio > 1) { 
+                    drawH = targetSize; drawW = userPhoto.width * (targetSize / userPhoto.height); 
+                } else { 
+                    drawW = targetSize; drawH = userPhoto.height * (targetSize / userPhoto.width); 
+                }
                 ctx.drawImage(userPhoto, photoCx - (drawW / 2), photoCy - (drawH / 2), drawW, drawH);
                 ctx.restore();
             } else {
-                ctx.fillStyle = '#E2E8F0'; ctx.beginPath(); ctx.arc(photoCx, photoCy, photoRadius, 0, Math.PI * 2); ctx.fill();
+                ctx.fillStyle = '#E2E8F0'; 
+                ctx.beginPath(); ctx.arc(photoCx, photoCy, photoRadius, 0, Math.PI * 2); ctx.fill();
             }
 
-            // 4. Logo Paling Atas Tengah (Aman)
+            // 4. Logo Sekolah (Aman di Paling Atas Tengah)
             const logoY = 130;
             if (schoolLogo) {
-                const logoRadius = 60;
-                ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 10;
+                const logoRadius = 65;
+                ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 15;
                 ctx.drawImage(schoolLogo, 540 - logoRadius, logoY - logoRadius, logoRadius*2, logoRadius*2);
                 ctx.shadowBlur = 0;
             }
 
-            // 5. Teks SAYA LULUS
-            const textY = 250;
+            // 5. Teks SAYA LULUS! (Di Bawah Logo)
+            const textY = 260;
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.font = '900 65px "Inter", sans-serif'; ctx.fillStyle = '#FDE047'; 
+            
+            ctx.font = '900 70px "Inter", sans-serif'; 
+            ctx.fillStyle = '#FDE047'; 
             ctx.shadowColor = 'rgba(253, 224, 71, 0.4)'; ctx.shadowBlur = 15;
             ctx.fillText('SAYA LULUS!', 540, textY);
-            ctx.shadowBlur = 0; 
-            ctx.font = '600 22px "Inter", sans-serif'; ctx.fillStyle = '#CBD5E1'; 
-            ctx.fillText('ANGKATAN 2026 • SMP NEGERI 1 DAWAN', 540, textY + 50);
-
-            // 6. Banner Nama (Bawah Tanpa NISN)
-            const bannerY = 920, bannerW = 860, bannerH = 90, bannerX = (1080 - bannerW) / 2;
-            const gradBanner = ctx.createLinearGradient(bannerX, 0, bannerX + bannerW, 0);
-            gradBanner.addColorStop(0, '#D97706'); gradBanner.addColorStop(0.5, '#FBBF24'); gradBanner.addColorStop(1, '#D97706'); 
+            ctx.shadowBlur = 0; // Reset
             
-            ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 15; ctx.shadowOffsetY = 5;
-            ctx.fillStyle = gradBanner; drawRoundRect(ctx, bannerX, bannerY, bannerW, bannerH, 45); ctx.fill();
+            // Subtitle Angkatan
+            ctx.font = '600 22px "Inter", sans-serif'; 
+            ctx.fillStyle = '#E2E8F0'; 
+            ctx.fillText('ANGKATAN 2026 • SMP NEGERI 1 DAWAN', 540, textY + 55);
+
+            // 6. Banner Nama Siswa Saja (Bagian Bawah, Tanpa NISN)
+            const bannerY = 930, bannerW = 860, bannerH = 90, bannerX = (1080 - bannerW) / 2;
+            
+            // Gradasi Emas untuk Banner
+            const gradBanner = ctx.createLinearGradient(bannerX, 0, bannerX + bannerW, 0);
+            gradBanner.addColorStop(0, '#D97706'); 
+            gradBanner.addColorStop(0.5, '#FBBF24'); 
+            gradBanner.addColorStop(1, '#D97706'); 
+            
+            ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 20; ctx.shadowOffsetY = 8;
+            ctx.fillStyle = gradBanner; 
+            drawRoundRect(ctx, bannerX, bannerY, bannerW, bannerH, 45); 
+            ctx.fill();
             ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
 
+            // Render Teks Nama (Auto Resize jika nama terlalu panjang)
             const namaSiswa = (d?.Nama_Siswa || 'SISWA BERPRESTASI').toUpperCase();
-            let fontSize = 38; ctx.font = `800 ${fontSize}px "Inter", sans-serif`;
+            let fontSize = 40; 
+            ctx.font = `800 ${fontSize}px "Inter", sans-serif`;
             while (ctx.measureText(namaSiswa).width > (bannerW - 80) && fontSize > 20) {
                 fontSize -= 2; ctx.font = `800 ${fontSize}px "Inter", sans-serif`;
             }
