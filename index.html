@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Portal Kelulusan - SMPN 1 Dawan</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Playfair Display untuk Elegan, Inter untuk Modern) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- SheetJS for Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { 
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif']
+                    },
+                    colors: {
+                        academy: {
+                            navy: '#1e3a8a',       // Blue 900 (Main Navy)
+                            navyDark: '#172554',   // Blue 950 (Darker Navy)
+                            navyLight: '#1e40af',  // Blue 800
+                            gold: '#fbbf24',       // Amber 400 (Main Gold)
+                            goldDark: '#d97706',   // Amber 600
+                            goldLight: '#fde68a',  // Amber 200
+                            bg: '#f8fafc',         // Slate 50
+                            textMain: '#0f172a',   // Slate 900
+                            textMuted: '#475569',  // Slate 600
+                            border: '#e2e8f0',     // Slate 200
+                        }
+                    },
+                    boxShadow: {
+                        'premium': '0 10px 30px -10px rgba(30, 58, 138, 0.2)',
+                        'gold-glow': '0 0 20px rgba(251, 191, 36, 0.4)',
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.6s ease-out forwards',
+                        'slide-up': 'slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+                        'shine': 'shine 2s infinite',
+                        'float-slow': 'floatSlow 4s ease-in-out infinite',
+                        'float-fast': 'floatFast 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        slideUp: { '0%': { transform: 'translateY(30px)', opacity: '0' }, '100%': { transform: 'translateY(0)', opacity: '1' } },
+                        shine: { '0%': { backgroundPosition: '200% center' }, '100%': { backgroundPosition: '-200% center' } },
+                        floatSlow: { '0%, 100%': { transform: 'translateY(0) rotate(0deg)' }, '50%': { transform: 'translateY(-20px) rotate(5deg)' } },
+                        floatFast: { '0%, 100%': { transform: 'translateY(0) rotate(0deg)' }, '50%': { transform: 'translateY(-15px) rotate(-5deg)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        #app-container {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: 9999999; background-color: #f8fafc; color: #0f172a;
+            overflow-x: hidden; overflow-y: auto; font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        ::-webkit-scrollbar { width: 6px; background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .view-section { display: none; opacity: 0; transition: opacity 0.5s ease-in-out; }
+        .view-section.active { display: flex; opacity: 1; }
+        .blogger-thumbnail { display: none; }
+        .no-select { user-select: none; -webkit-user-select: none; -moz-user-select: none; }
+        
+        /* SweetAlert Premium Override */
+        .swal2-popup { border-radius: 1rem !important; border-top: 5px solid #1e3a8a !important; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1) !important; padding: 2rem !important;}
+        .swal2-title { font-family: 'Playfair Display', serif !important; color: #1e3a8a !important; font-weight: 800 !important; }
+        .swal2-confirm { background-color: #1e3a8a !important; color: #fbbf24 !important; font-weight: 600 !important; border-radius: 0.5rem !important; }
+        
+        /* Premium Input */
+        .academy-input {
+            background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 0.5rem;
+            padding: 14px 16px; color: #0f172a; font-size: 15px; outline: none; transition: all 0.3s;
+            width: 100%; box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+        }
+        .academy-input:focus { border-color: #fbbf24; box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.2); }
+
+        /* Skeleton Loading */
+        .skeleton { background: #e2e8f0; background: linear-gradient(110deg, #e2e8f0 8%, #f8fafc 18%, #e2e8f0 33%); border-radius: 0.5rem; background-size: 200% 100%; animation: 1.5s shine linear infinite; }
+
+        /* Text Gradient Gold */
+        .text-gradient-gold {
+            background: linear-gradient(to right, #fbbf24, #f59e0b, #fbbf24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            background-size: 200% auto;
+        }
+
+        /* Certificate Border */
+        .certificate-border {
+            position: relative;
+            background: white;
+            padding: 2px;
+        }
+        .certificate-border::before {
+            content: '';
+            position: absolute;
+            top: 6px; left: 6px; right: 6px; bottom: 6px;
+            border: 2px solid #fbbf24;
+            pointer-events: none;
+            border-radius: inherit;
+            z-index: 10;
+        }
+
+        /* Animasi Text Kelulusan Looping */
+        @keyframes pulseGoldText {
+            0%, 100% { transform: scale(1); text-shadow: 0 0 15px rgba(251, 191, 36, 0.2); }
+            50% { transform: scale(1.05); text-shadow: 0 0 30px rgba(251, 191, 36, 0.8), 0 0 10px rgba(251, 191, 36, 0.5); }
+        }
+        .animate-lulus-loop { display: inline-block; animation: pulseGoldText 1.5s infinite ease-in-out; }
+
+        @keyframes pulseRedText {
+            0%, 100% { transform: scale(1); text-shadow: 0 0 15px rgba(225, 29, 72, 0.1); }
+            50% { transform: scale(1.02); text-shadow: 0 0 20px rgba(225, 29, 72, 0.6); }
+        }
+        .animate-gagal-loop { display: inline-block; animation: pulseRedText 2s infinite ease-in-out; }
+    </style>
+</head>
+<body>
+
+    <!-- Sound Effects -->
+    <audio id="sfx-pop" src="https://assets.mixkit.co/active_storage/sfx/3165/3165-preview.mp3" preload="auto"></audio>
+    <audio id="sfx-success" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3" preload="auto"></audio>
+    <audio id="sfx-fail" src="https://assets.mixkit.co/active_storage/sfx/2997/2997-preview.mp3" preload="auto"></audio>
+
+    <img src="https://i.ibb.co.com/BVGjXVL7/logo-baru.png" alt="Thumbnail" class="blogger-thumbnail">
+
+    <div id="app-container" class="no-select">
+        
+        <!-- ========================================== -->
+        <!-- VIEW 1: BERANDA (PREMIUM HERO)             -->
+        <!-- ========================================== -->
+        <div id="view-home" class="view-section active flex-col w-full min-h-full bg-academy-bg relative">
+
+            <!-- Hero Section -->
+            <div class="flex-1 flex flex-col items-center justify-between p-6 relative overflow-hidden bg-gradient-to-b from-white to-slate-100 min-h-screen">
+                
+                <!-- Dekorasi Background Halus -->
+                <div class="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none" style="background-image: radial-gradient(circle at 50% 0%, #fbbf24 0%, transparent 60%);"></div>
+                <div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%231e3a8a\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+
+                <div class="relative z-10 w-full max-w-2xl animate-slide-up text-center flex flex-col items-center pt-8 my-auto">
+                    
+                    <!-- Logo Utama Besar di Tengah -->
+                    <img src="https://i.ibb.co.com/BVGjXVL7/logo-baru.png" alt="Logo SMPN 1 Dawan" class="w-32 h-32 md:w-40 md:h-40 object-contain mb-6 filter drop-shadow-[0_10px_15px_rgba(30,58,138,0.2)]">
+
+                    <div class="inline-block border border-academy-navy/20 bg-academy-navy/5 backdrop-blur-sm px-4 py-1.5 rounded-full mb-6">
+                        <span class="text-xs font-bold text-academy-navyDark tracking-widest uppercase"><i class="fas fa-star text-academy-gold mr-1"></i> Angkatan 2026 <i class="fas fa-star text-academy-gold ml-1"></i></span>
+                    </div>
+                    
+                    <h2 class="font-serif text-4xl md:text-5xl font-extrabold mb-4 leading-tight text-academy-navyDark tracking-tight">
+                        PENGUMUMAN<br><span class="text-gradient-gold">KELULUSAN</span>
+                    </h2>
+                    
+                    <p class="text-academy-textMuted font-medium text-sm md:text-base max-w-md mx-auto mb-10 leading-relaxed">
+                        Momen penentuan hasil pendidikan selama 3 tahun. Kami bangga atas dedikasi dan kerja keras seluruh siswa/siswi.
+                    </p>
+
+                    <!-- Countdown -->
+                    <div id="countdown-wrapper" class="w-full mb-8">
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Akses akan dibuka dalam</p>
+                        <div class="flex justify-center gap-3 md:gap-5">
+                            <div class="bg-white border border-slate-200 rounded-xl p-4 w-20 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.1)]">
+                                <span id="cd-days" class="block text-3xl font-black text-academy-navy mb-1">00</span>
+                                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Hari</span>
+                            </div>
+                            <div class="bg-white border border-slate-200 rounded-xl p-4 w-20 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.1)]">
+                                <span id="cd-hours" class="block text-3xl font-black text-academy-navy mb-1">00</span>
+                                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Jam</span>
+                            </div>
+                            <div class="bg-white border border-slate-200 rounded-xl p-4 w-20 shadow-[0_4px_20px_-5px_rgba(0,0,0,0.1)]">
+                                <span id="cd-minutes" class="block text-3xl font-black text-academy-navy mb-1">00</span>
+                                <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Menit</span>
+                            </div>
+                            <div class="bg-academy-navy border border-academy-navyDark rounded-xl p-4 w-20 shadow-[0_10px_25px_-5px_rgba(30,58,138,0.4)] relative overflow-hidden">
+                                <span id="cd-seconds" class="block text-3xl font-black text-academy-gold mb-1 relative z-10">00</span>
+                                <span class="text-[9px] font-bold text-white uppercase tracking-wider relative z-10">Detik</span>
+                            </div>
+                        </div>
+                        <p id="tgl-info" class="text-sm font-bold text-academy-navy mt-6"><i class="far fa-calendar-alt text-academy-gold mr-1"></i> -</p>
+                    </div>
+
+                    <!-- Tombol Buka Kunci (Hidden saat countdown jalan) -->
+                    <div id="btn-cek-kelulusan" class="hidden w-full max-w-sm mx-auto animate-fade-in mt-4">
+                        <button onclick="switchView('view-login-siswa')" class="w-full bg-academy-gold hover:bg-academy-goldDark text-academy-navyDark hover:text-white transition-colors duration-300 font-bold text-[15px] py-4 rounded-xl shadow-gold-glow flex items-center justify-center gap-2 uppercase tracking-wide">
+                            <i class="fas fa-lock-open"></i> Akses Portal Kelulusan
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Tombol Admin di Bawah (Disesuaikan agar tidak overlap) -->
+                <div class="relative z-20 w-full text-center pb-2 mt-10">
+                    <button onclick="switchView('view-login-admin')" class="text-slate-300 hover:text-academy-navy transition-all opacity-60 hover:opacity-100 p-3 hover:scale-110">
+                        <i class="fas fa-shield-alt text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: LOGIN SISWA                        -->
+        <!-- ========================================== -->
+        <div id="view-login-siswa" class="view-section flex-col w-full min-h-screen items-center px-4 relative justify-center overflow-hidden bg-slate-50">
+            
+            <!-- Elemen Dekoratif Background (Modern Bright) -->
+            <div class="absolute inset-0 pointer-events-none overflow-hidden">
+                <!-- Blob Kanan Atas (Emas Lembut) -->
+                <div class="absolute -top-32 -right-32 w-[500px] h-[500px] bg-academy-gold/20 rounded-full blur-[100px]"></div>
+                <!-- Blob Kiri Bawah (Biru Lembut) -->
+                <div class="absolute -bottom-32 -left-32 w-[600px] h-[600px] bg-academy-navy/15 rounded-full blur-[120px]"></div>
+                <!-- Pola Geometri Tipis -->
+                <div class="absolute inset-0 opacity-[0.03]" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%231e3a8a\' fill-opacity=\'1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');"></div>
+            </div>
+            
+            <button onclick="switchView('view-home')" class="absolute top-6 left-6 text-academy-textMuted hover:text-academy-navy bg-white/80 backdrop-blur-sm w-10 h-10 rounded-full shadow-sm flex items-center justify-center transition-all border border-slate-200 z-20 hover:scale-105 hover:bg-white">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            
+            <!-- Card Login Premium Modern -->
+            <div class="bg-white/90 backdrop-blur-md shadow-[0_20px_50px_-12px_rgba(30,58,138,0.15)] rounded-2xl border border-white w-full max-w-sm p-8 flex flex-col items-center animate-slide-up relative z-10">
+                <!-- Aksen Garis Emas di Atas Card -->
+                <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-academy-goldLight via-academy-gold to-academy-goldLight rounded-t-2xl"></div>
+                
+                <!-- Logo Sekolah Premium -->
+                <div class="relative mb-5 mt-2">
+                    <div class="absolute inset-0 bg-academy-gold rounded-full blur-md opacity-40 animate-pulse"></div>
+                    <img src="https://i.ibb.co.com/BVGjXVL7/logo-baru.png" class="w-20 h-20 object-contain relative z-10 filter drop-shadow-md bg-white rounded-full p-2 border border-slate-100">
+                </div>
+                
+                <h1 class="font-serif font-extrabold text-2xl mb-1 text-academy-navy text-center">Otentikasi Siswa</h1>
+                <p class="text-xs font-medium text-academy-textMuted mb-8 text-center">Silakan masukkan Nomor Induk Siswa Nasional (NISN) Anda yang valid.</p>
+                
+                <form id="form-login-siswa" onsubmit="handleLoginSiswa(event)" class="w-full flex flex-col gap-4">
+                    <div>
+                        <label class="text-[11px] font-bold text-academy-textMuted uppercase tracking-wider mb-1.5 block">NISN / Username</label>
+                        <input type="text" id="siswa-nisn" required class="academy-input" placeholder="Ketik NISN...">
+                    </div>
+                    <div>
+                        <label class="text-[11px] font-bold text-academy-textMuted uppercase tracking-wider mb-1.5 block">Kata Sandi</label>
+                        <input type="password" id="siswa-pass" required class="academy-input" placeholder="Sandi Default: NISN">
+                    </div>
+                    <button type="submit" id="btn-submit-siswa" class="w-full bg-academy-navy hover:bg-academy-navyDark text-academy-gold font-bold py-3.5 rounded-lg text-[14px] mt-4 transition-colors shadow-md">
+                        Verifikasi Identitas
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: HASIL KELULUSAN (SERTIFIKAT)       -->
+        <!-- ========================================== -->
+        <div id="view-siswa-result" class="view-section flex-col w-full min-h-screen relative bg-academy-bg items-center justify-center transition-all duration-700 overflow-hidden py-10 px-4">
+            
+            <!-- Joyful Background Elements (Animasi Melayang - Aktif saat Lulus) -->
+            <div id="joy-bg-elements" class="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-1000 z-0">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(251,191,36,0.15)_0%,transparent_70%)]"></div>
+                <div class="absolute top-[10%] left-[5%] md:left-[15%] text-5xl md:text-6xl animate-float-slow opacity-80 drop-shadow-md">🎓</div>
+                <div class="absolute bottom-[15%] right-[5%] md:right-[15%] text-4xl md:text-5xl animate-float-fast opacity-80 drop-shadow-md">✨</div>
+                <div class="absolute top-[20%] right-[10%] md:right-[20%] text-3xl md:text-4xl animate-float-slow opacity-80 drop-shadow-md">🎉</div>
+                <div class="absolute bottom-[20%] left-[10%] md:left-[20%] text-5xl md:text-6xl animate-float-fast opacity-80 drop-shadow-md">📜</div>
+                <div class="absolute top-[50%] left-[5%] text-2xl animate-float-slow opacity-60 drop-shadow-sm">🌟</div>
+                <div class="absolute top-[40%] right-[5%] text-4xl animate-float-fast opacity-70 drop-shadow-md">🎊</div>
+            </div>
+
+            <!-- Confetti Container -->
+            <div class="absolute inset-0 z-10 pointer-events-none" id="fx-container"></div>
+
+            <!-- Tombol Kembali -->
+            <div class="absolute top-6 left-6 z-30">
+                <button onclick="logoutSiswa()" class="text-academy-textMuted hover:text-rose-600 bg-white/80 backdrop-blur-sm px-4 py-2 rounded-md shadow-sm border border-slate-200 text-xs font-bold transition-colors flex items-center gap-2">
+                    <i class="fas fa-sign-out-alt"></i> Keluar
+                </button>
+            </div>
+
+            <!-- Card Sertifikat -->
+            <div class="w-full max-w-lg animate-slide-up relative z-20 certificate-border rounded-xl shadow-2xl overflow-hidden mt-10 md:mt-0">
+                
+                <!-- Pola Background Sertifikat & Watermark -->
+                <div class="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white z-0"></div>
+                <div class="absolute inset-0 opacity-[0.02] z-0" style="background-image: url('data:image/svg+xml,%3Csvg width=\'20\' height=\'20\' viewBox=\'0 0 20 20\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'%231e3a8a\' fill-opacity=\'1\' fill-rule=\'evenodd\'%3E%3Ccircle cx=\'3\' cy=\'3\' r=\'3\'/%3E%3Ccircle cx=\'13\' cy=\'13\' r=\'3\'/%3E%3C/g%3E%3C/svg%3E');"></div>
+                <img src="https://i.ibb.co.com/BVGjXVL7/logo-baru.png" class="absolute inset-0 m-auto w-64 h-64 object-contain opacity-[0.04] pointer-events-none z-0">
+                
+                <div class="relative z-10 p-8 md:p-10 flex flex-col items-center text-center">
+                    
+                    <!-- Ribbon Decoration Khusus Lulus -->
+                    <div id="res-ribbon" class="absolute top-0 right-6 bg-academy-gold text-white text-[10px] font-black tracking-widest px-3 py-4 rounded-b-lg shadow-md hidden flex-col items-center z-20">
+                        <i class="fas fa-medal text-lg mb-1"></i>
+                        LULUS
+                    </div>
+
+                    <img src="https://i.ibb.co.com/BVGjXVL7/logo-baru.png" class="w-16 h-16 object-contain mb-4 filter drop-shadow-sm relative z-10">
+                    
+                    <h2 class="font-serif font-bold text-sm text-academy-navy tracking-widest uppercase mb-1 relative z-10">Pemerintah Kabupaten Klungkung</h2>
+                    <h3 class="font-serif font-black text-xl md:text-2xl text-academy-navyDark tracking-wide mb-6 border-b-2 border-academy-gold pb-4 inline-block px-4 relative z-10">SMP NEGERI 1 DAWAN</h3>
+                    
+                    <p class="text-xs text-academy-textMuted font-medium uppercase tracking-wider mb-2 relative z-10">Menyatakan Bahwa Siswa:</p>
+                    
+                    <h3 class="font-serif text-2xl md:text-3xl font-black text-academy-navy mb-4 leading-tight drop-shadow-sm relative z-10" id="res-nama">-</h3>
+                    <div class="inline-block bg-gradient-to-r from-academy-gold/5 via-academy-gold/15 to-academy-gold/5 border border-academy-gold/40 px-5 py-2 rounded-full mb-8 shadow-sm relative z-10">
+                        <p class="text-sm font-bold text-academy-navyDark tracking-widest" id="res-nisn">-</p>
+                    </div>
+                    
+                    <div class="w-full grid grid-cols-2 gap-4 mb-8 text-left bg-white/80 backdrop-blur-sm border border-slate-200 p-4 rounded-xl shadow-sm relative z-10">
+                        <div>
+                            <p class="text-[10px] font-bold text-academy-textMuted uppercase tracking-wider">Kelas</p>
+                            <p class="text-sm font-semibold text-academy-textMain mt-1" id="res-kelas">-</p>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-academy-textMuted uppercase tracking-wider">Tempat, Tgl Lahir</p>
+                            <p class="text-sm font-semibold text-academy-textMain mt-1" id="res-ttl">-</p>
+                        </div>
+                    </div>
+
+                    <p class="text-xs text-academy-textMuted font-medium uppercase tracking-wider mb-3">Telah Mengikuti Evaluasi Pembelajaran Dan Dinyatakan:</p>
+                    
+                    <!-- Status Box -->
+                    <div id="res-status-wrapper" class="w-full py-4 border-y-2 relative overflow-hidden transition-all duration-500 mb-6">
+                        <div id="res-status-box" class="font-serif text-3xl md:text-4xl font-black tracking-widest">
+                            -
+                        </div>
+                    </div>
+                    
+                    <p id="res-pesan" class="text-xs font-medium text-academy-textMuted leading-relaxed max-w-xs mx-auto mb-6">
+                        -
+                    </p>
+
+                    <!-- Tombol Twibbon Premium -->
+                    <button id="btn-download-twibbon" onclick="openCameraModal()" class="w-full bg-academy-navy hover:bg-academy-navyDark text-academy-gold border border-academy-gold/30 font-bold py-3.5 rounded-md transition-all shadow-md hidden flex items-center justify-center gap-2 group uppercase text-sm tracking-wide">
+                        <i class="fas fa-camera text-academy-gold group-hover:scale-110 transition-transform"></i> Buat Twibbon Premium
+                    </button>
+                    
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- MODAL KAMERA (STUDIO TWIBBON)              -->
+        <!-- ========================================== -->
+        <div id="camera-modal" class="fixed inset-0 z-[99999999] hidden flex-col items-center justify-center p-4 bg-academy-navyDark/90 backdrop-blur-md transition-opacity">
+            <div class="bg-white rounded-xl w-full max-w-md overflow-hidden flex flex-col shadow-2xl animate-fade-in relative border border-academy-gold/50">
+                
+                <div class="px-5 py-4 flex justify-between items-center bg-academy-navy text-white border-b border-academy-gold/30">
+                    <h3 class="font-serif font-bold text-sm text-academy-gold tracking-widest flex items-center gap-2"><i class="fas fa-camera-retro"></i> Studio Lulusan</h3>
+                    <button onclick="closeCameraModal()" class="w-8 h-8 hover:bg-white/10 rounded-full flex items-center justify-center transition-colors"><i class="fas fa-times"></i></button>
+                </div>
+                
+                <!-- STEP 1: KAMERA -->
+                <div id="step-kamera" class="flex flex-col w-full bg-slate-900">
+                    <div class="relative aspect-[3/4] w-full overflow-hidden flex items-center justify-center">
+                        <video id="camera-feed" class="w-full h-full object-cover" autoplay playsinline></video>
+                        <canvas id="camera-canvas" class="hidden"></canvas>
+                        
+                        <!-- Overlay Bantuan Posisi Circle (Karena twibbon pakai frame bulat) -->
+                        <div class="absolute inset-0 pointer-events-none flex items-center justify-center pb-8">
+                            <div class="w-2/3 aspect-square rounded-full border-2 border-dashed border-academy-gold shadow-[0_0_0_999px_rgba(0,0,0,0.5)]"></div>
+                        </div>
+                        <div class="absolute bottom-6 left-0 w-full text-center">
+                            <span class="bg-black/60 text-academy-gold border border-academy-gold/30 text-xs font-bold px-4 py-2 rounded-sm shadow-sm uppercase tracking-wider">Posisikan wajah di lingkaran</span>
+                        </div>
+                    </div>
+                    
+                    <div class="p-6 bg-white flex justify-center items-center">
+                        <button id="btn-capture" onclick="captureAndGenerateTwibbon()" class="w-16 h-16 rounded-full bg-academy-navy hover:bg-academy-navyDark hover:scale-95 transition-all shadow-md border-2 border-academy-gold flex items-center justify-center text-academy-gold text-2xl">
+                            <i class="fas fa-camera"></i>
+                        </button>
+                        <button id="btn-processing" class="hidden w-full bg-slate-100 text-academy-textMuted font-bold py-3.5 rounded-md flex justify-center items-center gap-2 uppercase text-sm" disabled>
+                            <i class="fas fa-circle-notch fa-spin"></i> Memproses...
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: HASIL PREVIEW -->
+                <div id="step-hasil" class="hidden flex-col w-full p-6 bg-white">
+                    <div class="bg-slate-50 p-2 rounded-lg mb-4 border border-slate-200 shadow-sm">
+                        <img id="twibbon-preview" class="w-full aspect-square object-contain rounded-md" src="" alt="Twibbon Anda">
+                    </div>
+                    
+                    <p class="text-[10px] text-academy-textMuted text-center font-bold uppercase tracking-wider mb-6 bg-slate-50 p-2 rounded-sm border border-slate-100">
+                        <i class="fas fa-info-circle text-academy-navy mr-1"></i> Jika tombol unduh bermasalah, tekan & tahan gambar untuk menyimpan.
+                    </p>
+                    
+                    <div class="flex flex-col gap-3">
+                        <button onclick="downloadTwibbonAction()" class="w-full bg-academy-navy hover:bg-academy-navyDark text-academy-gold font-bold py-3.5 rounded-md shadow-md transition-all flex items-center justify-center gap-2 uppercase text-sm tracking-wide">
+                            <i class="fas fa-download"></i> Unduh Resolusi Tinggi
+                        </button>
+                        <button onclick="resetCamera()" class="w-full bg-white hover:bg-slate-50 border border-slate-300 text-academy-textMain font-bold py-3 rounded-md transition-colors flex items-center justify-center gap-2 uppercase text-xs">
+                            <i class="fas fa-redo"></i> Foto Ulang
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 4: LOGIN ADMIN (WORKSPACE)            -->
+        <!-- ========================================== -->
+        <div id="view-login-admin" class="view-section flex-col w-full min-h-screen bg-academy-bg items-center px-4 relative justify-center">
+            
+            <button onclick="switchView('view-home')" class="absolute top-6 left-6 text-academy-textMuted hover:text-academy-navy bg-white w-10 h-10 rounded-full shadow-sm flex items-center justify-center transition-colors border border-academy-border">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="bg-white shadow-premium rounded-xl border border-academy-border w-full max-w-sm p-8 flex flex-col items-center animate-slide-up relative">
+                
+                <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 text-2xl mb-5">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                
+                <h1 class="font-serif font-bold text-2xl mb-1 text-academy-navy text-center">Portal Administrator</h1>
+                <p class="text-[11px] font-bold text-academy-textMuted mb-8 text-center uppercase tracking-widest">Akses Terbatas</p>
+                
+                <form id="form-login-admin" onsubmit="handleLoginAdmin(event)" class="w-full flex flex-col gap-4">
+                    <div>
+                        <input type="password" id="admin-pass" required class="academy-input text-center tracking-[0.3em] font-bold" placeholder="• • • • • •">
+                    </div>
+                    <button type="submit" id="btn-submit-admin" class="w-full bg-slate-900 hover:bg-black text-white font-bold py-3.5 rounded-lg text-[14px] mt-2 transition-all shadow-md uppercase tracking-wider">
+                        Otorisasi
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 5: ADMIN DASHBOARD (CLEAN & OFFICIAL) -->
+        <!-- ========================================== -->
+        <div id="view-admin-dashboard" class="view-section flex-col md:flex-row w-full h-full min-h-screen bg-academy-bg relative">
+            
+            <!-- Desktop Sidebar -->
+            <div class="hidden md:flex flex-col w-64 bg-academy-navy text-white shadow-xl z-20 shrink-0 min-h-screen relative">
+                <div class="h-20 flex items-center px-6 border-b border-white/10">
+                    <i class="fas fa-server text-academy-gold mr-3"></i>
+                    <span class="font-serif font-bold text-lg tracking-widest text-academy-gold uppercase">Workspace</span>
+                </div>
+                
+                <div class="flex-1 py-6 flex flex-col gap-2 px-4">
+                    <button onclick="switchAdminTab('tab-data')" class="flex items-center gap-3 px-4 py-3 rounded-md transition-all admin-sidebar-btn font-medium bg-white/10 border-l-2 border-academy-gold text-white" data-target="tab-data">
+                        <i class="fas fa-folder-open w-5 text-center text-academy-gold"></i><span class="tracking-wide text-sm">Data Siswa</span>
+                    </button>
+                    <button onclick="switchAdminTab('tab-upload')" class="flex items-center gap-3 px-4 py-3 rounded-md transition-all admin-sidebar-btn font-medium text-white/60 hover:bg-white/5 border-l-2 border-transparent hover:text-white" data-target="tab-upload">
+                        <i class="fas fa-cloud-upload-alt w-5 text-center"></i><span class="tracking-wide text-sm">Upload Excel</span>
+                    </button>
+                    <button onclick="switchAdminTab('tab-log')" class="flex items-center gap-3 px-4 py-3 rounded-md transition-all admin-sidebar-btn font-medium text-white/60 hover:bg-white/5 border-l-2 border-transparent hover:text-white" data-target="tab-log">
+                        <i class="fas fa-history w-5 text-center"></i><span class="tracking-wide text-sm">Log Akses</span>
+                    </button>
+                    <button onclick="switchAdminTab('tab-setting')" class="flex items-center gap-3 px-4 py-3 rounded-md transition-all admin-sidebar-btn font-medium text-white/60 hover:bg-white/5 border-l-2 border-transparent hover:text-white mt-auto" data-target="tab-setting">
+                        <i class="fas fa-cog w-5 text-center"></i><span class="tracking-wide text-sm">Sistem</span>
+                    </button>
+                </div>
+                
+                <div class="p-4 border-t border-white/10">
+                    <button onclick="logoutAdmin()" class="flex items-center justify-center gap-2 w-full py-3 bg-rose-900/40 text-rose-300 hover:bg-rose-900/60 hover:text-rose-200 border border-rose-800/50 rounded-md transition-colors font-bold text-xs uppercase tracking-wider">
+                        Keluar Sesi <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile Topbar -->
+            <div class="md:hidden bg-academy-navy text-white h-16 flex items-center justify-between px-5 sticky top-0 z-30 shadow-md shrink-0">
+                <div class="font-serif font-bold text-academy-gold tracking-widest uppercase flex items-center gap-2"><i class="fas fa-server"></i> Workspace</div>
+                <button onclick="logoutAdmin()" class="w-8 h-8 text-rose-400 bg-white/10 rounded-md flex items-center justify-center"><i class="fas fa-power-off text-sm"></i></button>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="flex-1 flex flex-col h-screen overflow-hidden bg-academy-bg relative">
+                
+                <!-- TAB: DATA SISWA -->
+                <div id="tab-data" class="admin-tab w-full h-full animate-fade-in flex flex-col overflow-hidden pb-[70px] md:pb-0 relative z-10">
+                    <div class="p-5 md:p-8 shrink-0 relative bg-white border-b border-slate-200">
+                        <div class="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-5">
+                            <div>
+                                <h2 class="font-serif text-2xl font-bold text-academy-navy tracking-wide">Database Lulusan</h2>
+                                <p class="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wider">Tahun Akademik 2025/2026</p>
+                            </div>
+                            <div class="flex gap-2">
+                                <button onclick="deleteAllData()" class="bg-white border border-rose-200 text-rose-600 font-bold text-xs px-4 py-2.5 rounded-md hover:bg-rose-50 transition-colors uppercase tracking-wider"><i class="fas fa-trash-alt mr-1"></i> Format</button>
+                                <button onclick="openModalSiswa()" class="bg-academy-navy text-academy-gold font-bold text-xs px-5 py-2.5 rounded-md hover:bg-academy-navyDark shadow-sm transition-colors uppercase tracking-wider"><i class="fas fa-plus mr-1"></i> Tambah</button>
+                            </div>
+                        </div>
+
+                        <!-- Stats Box -->
+                        <div class="grid grid-cols-3 gap-3 md:gap-5">
+                            <div class="bg-slate-50 border border-slate-200 p-4 rounded-md flex flex-col">
+                                <span class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mb-1">Total Data</span>
+                                <span class="text-2xl font-black text-academy-textMain" id="stat-total">0</span>
+                            </div>
+                            <div class="bg-emerald-50 border border-emerald-100 p-4 rounded-md flex flex-col">
+                                <span class="text-emerald-600 text-[10px] font-bold uppercase tracking-widest mb-1">Lulus</span>
+                                <span class="text-2xl font-black text-emerald-700" id="stat-lulus">0</span>
+                            </div>
+                            <div class="bg-rose-50 border border-rose-100 p-4 rounded-md flex flex-col">
+                                <span class="text-rose-600 text-[10px] font-bold uppercase tracking-widest mb-1">Tdk Lulus</span>
+                                <span class="text-2xl font-black text-rose-700" id="stat-gagal">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="px-5 md:px-8 py-4 shrink-0 bg-academy-bg border-b border-slate-200">
+                        <div class="relative w-full max-w-md">
+                            <i class="fas fa-search absolute left-4 top-3 text-slate-400"></i>
+                            <input type="text" id="search-siswa" onkeyup="filterTable()" placeholder="Cari berdasarkan Nama atau NISN..." class="w-full bg-white rounded-md pl-10 pr-4 py-2.5 text-sm outline-none border border-slate-300 focus:border-academy-navy font-medium text-academy-textMain transition-all shadow-sm">
+                        </div>
+                    </div>
+
+                    <div id="tabel-siswa-body" class="flex-1 overflow-y-auto flex flex-col px-5 md:px-8 py-4 gap-2 bg-academy-bg">
+                        <!-- Items rendered via JS -->
+                    </div>
+                </div>
+
+                <!-- TAB: UPLOAD -->
+                <div id="tab-upload" class="admin-tab hidden flex-col w-full h-full animate-fade-in overflow-y-auto pb-24 md:pb-8 p-5 md:p-8">
+                    <div class="max-w-2xl w-full mx-auto bg-white rounded-xl border border-slate-200 p-8 shadow-sm mt-4">
+                        <div class="text-center mb-8">
+                            <i class="fas fa-file-excel text-4xl text-emerald-600 mb-3"></i>
+                            <h2 class="font-serif font-bold text-2xl text-academy-navy">Import Data Batch</h2>
+                            <p class="text-xs font-medium text-slate-500 mt-1 uppercase tracking-wider">Format didukung: .xlsx, .xls</p>
+                        </div>
+
+                        <button onclick="downloadTemplate()" class="w-full mb-6 bg-slate-50 hover:bg-slate-100 text-academy-textMain py-3 rounded-md font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 border border-slate-300">
+                            <i class="fas fa-download text-academy-navy"></i> Unduh Format Master
+                        </button>
+
+                        <div class="border-2 border-dashed border-slate-300 bg-slate-50 rounded-lg p-10 flex flex-col items-center justify-center relative cursor-pointer hover:border-academy-navy hover:bg-blue-50/50 transition-colors group">
+                            <input type="file" id="file-excel" accept=".xlsx, .xls" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onchange="handleFileSelect(event)">
+                            <i class="fas fa-cloud-upload-alt text-3xl text-slate-400 group-hover:text-academy-navy transition-colors mb-3"></i>
+                            <p class="font-bold text-sm text-academy-textMain mb-1" id="file-name-display">Pilih File Master Excel</p>
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Atau seret file ke area ini</p>
+                        </div>
+
+                        <button onclick="processUploadExcel()" id="btn-process-excel" class="w-full bg-academy-navy hover:bg-academy-navyDark text-academy-gold font-bold py-3.5 rounded-md text-sm mt-6 hidden shadow-md animate-slide-up flex justify-center items-center gap-2 uppercase tracking-wide">
+                            <i class="fas fa-cogs"></i> Mulai Eksekusi Data
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB: LOG AKSES -->
+                <div id="tab-log" class="admin-tab hidden flex-col w-full h-full animate-fade-in overflow-hidden pb-[70px] md:pb-0">
+                    <div class="p-6 shrink-0 flex justify-between items-center border-b border-slate-200 bg-white">
+                        <div>
+                            <h2 class="font-serif text-xl font-bold text-academy-navy tracking-wide">Log Aktivitas</h2>
+                            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500 mt-1">Sistem Pemantauan Akses</p>
+                        </div>
+                        <div class="bg-slate-50 border border-slate-200 px-4 py-2 rounded-md text-center">
+                            <span class="block text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total Sesi</span>
+                            <span id="stat-total-log" class="text-lg font-black text-academy-navy">0</span>
+                        </div>
+                    </div>
+                    <div id="tabel-log-body" class="flex-1 overflow-y-auto flex flex-col p-5 md:p-6 gap-2 bg-slate-50">
+                        <div class="text-center py-20 text-slate-400 font-medium text-sm"><i class="fas fa-circle-notch fa-spin mr-2"></i> Sinkronisasi sistem...</div>
+                    </div>
+                </div>
+
+                <!-- TAB: PENGATURAN -->
+                <div id="tab-setting" class="admin-tab hidden flex-col w-full h-full animate-fade-in overflow-y-auto pb-24 md:pb-8 p-5 md:p-8">
+                    <div class="max-w-2xl w-full mx-auto space-y-6 mt-4">
+                        
+                        <!-- Seting Jadwal -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                            <h2 class="font-serif font-bold text-lg text-academy-navy border-b border-slate-100 pb-3 mb-4"><i class="fas fa-calendar-check text-academy-gold mr-2"></i>Jadwal Publikasi</h2>
+                            <form onsubmit="saveSettingDate(event)" class="flex flex-col gap-4">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Konfigurasi Waktu (WITA)</label>
+                                    <input type="datetime-local" id="set-datetime" required class="academy-input bg-slate-50 font-mono text-sm">
+                                </div>
+                                <button type="submit" class="bg-academy-navy hover:bg-academy-navyDark text-white font-bold rounded-md py-3 text-xs uppercase tracking-wider transition-colors w-full md:w-auto md:self-end px-6">Terapkan Jadwal</button>
+                            </form>
+                        </div>
+
+                        <!-- Seting Sandi -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+                            <h2 class="font-serif font-bold text-lg text-academy-navy border-b border-slate-100 pb-3 mb-4"><i class="fas fa-key text-academy-gold mr-2"></i>Kredensial Admin</h2>
+                            <form onsubmit="saveNewPassword(event)" class="flex flex-col gap-4">
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Kata Sandi Baru</label>
+                                    <input type="password" id="set-new-pass" required minlength="6" class="academy-input bg-slate-50">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest block mb-2">Konfirmasi Sandi Baru</label>
+                                    <input type="password" id="set-conf-pass" required class="academy-input bg-slate-50">
+                                </div>
+                                <button type="submit" class="bg-slate-900 hover:bg-black text-white font-bold rounded-md py-3 text-xs uppercase tracking-wider transition-colors w-full md:w-auto md:self-end px-6">Perbarui Kredensial</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Mobile Bottom Nav -->
+            <div class="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-slate-200 flex justify-around items-center h-[65px] z-50 pb-safe shadow-[0_-5px_15px_rgba(0,0,0,0.05)]">
+                <button onclick="switchAdminTab('tab-data')" class="admin-nav-btn text-academy-navy w-full h-full flex flex-col items-center justify-center gap-1 transition-colors relative border-t-2 border-academy-navy" data-target="tab-data">
+                    <i class="fas fa-folder-open text-lg"></i><span class="text-[9px] font-bold uppercase tracking-wider">Data</span>
+                </button>
+                <button onclick="switchAdminTab('tab-upload')" class="admin-nav-btn text-slate-400 w-full h-full flex flex-col items-center justify-center gap-1 transition-colors relative border-t-2 border-transparent" data-target="tab-upload">
+                    <i class="fas fa-cloud-upload-alt text-lg"></i><span class="text-[9px] font-bold uppercase tracking-wider">Upload</span>
+                </button>
+                <button onclick="switchAdminTab('tab-log')" class="admin-nav-btn text-slate-400 w-full h-full flex flex-col items-center justify-center gap-1 transition-colors relative border-t-2 border-transparent" data-target="tab-log">
+                    <i class="fas fa-history text-lg"></i><span class="text-[9px] font-bold uppercase tracking-wider">Log</span>
+                </button>
+                <button onclick="switchAdminTab('tab-setting')" class="admin-nav-btn text-slate-400 w-full h-full flex flex-col items-center justify-center gap-1 transition-colors relative border-t-2 border-transparent" data-target="tab-setting">
+                    <i class="fas fa-cog text-lg"></i><span class="text-[9px] font-bold uppercase tracking-wider">Sistem</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- MODAL FORM CRUD SISWA                      -->
+        <!-- ========================================== -->
+        <div id="modal-siswa" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999999] hidden flex-col justify-end md:justify-center px-0 md:px-4 transition-opacity">
+            <div class="bg-white w-full rounded-t-2xl md:rounded-xl animate-slide-up flex flex-col max-h-[90vh] md:max-h-[85vh] md:max-w-md md:mx-auto shadow-2xl overflow-hidden">
+                <div class="flex justify-between items-center px-6 py-4 bg-academy-navy text-white z-10">
+                    <h2 class="font-serif text-lg font-bold tracking-wide" id="modal-title">Formulir Data</h2>
+                    <button onclick="closeModalSiswa()" class="text-white/60 hover:text-white transition-colors"><i class="fas fa-times text-lg"></i></button>
+                </div>
+                
+                <div class="p-6 overflow-y-auto bg-slate-50">
+                    <form id="form-crud-siswa" onsubmit="saveDataSiswa(event)" class="flex flex-col gap-4">
+                        <input type="hidden" id="crud-mode" value="add">
+                        <input type="hidden" id="crud-original-nisn" value="">
+                        
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">NISN (ID Unik)</label>
+                            <input type="text" id="crud-nisn" required class="academy-input bg-white" placeholder="Masukkan NISN...">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Nama Lengkap (Sesuai Ijazah)</label>
+                            <input type="text" id="crud-nama" required class="academy-input bg-white" placeholder="Contoh: Budi Santoso...">
+                        </div>
+                        <div class="flex gap-3">
+                            <div class="w-1/2">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Tempat Lahir</label>
+                                <input type="text" id="crud-tempat" class="academy-input bg-white" placeholder="Kota Lahir">
+                            </div>
+                            <div class="w-1/2">
+                                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Tgl Lahir</label>
+                                <input type="date" id="crud-tanggal" class="academy-input bg-white text-sm px-3">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Kelas</label>
+                            <input type="text" id="crud-kelas" class="academy-input bg-white" placeholder="Contoh: 9A">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 block">Keputusan Akhir</label>
+                            <div class="relative">
+                                <select id="crud-status" required class="academy-input bg-white appearance-none cursor-pointer font-bold">
+                                    <option value="LULUS">LULUS</option>
+                                    <option value="TIDAK LULUS">TIDAK LULUS</option>
+                                </select>
+                                <i class="fas fa-chevron-down absolute right-4 top-[18px] text-slate-400 pointer-events-none text-xs"></i>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="px-6 py-4 bg-white border-t border-slate-200 mt-auto">
+                    <button type="submit" form="form-crud-siswa" id="btn-save-crud" class="w-full bg-academy-navy hover:bg-academy-navyDark text-academy-gold font-bold py-3.5 rounded-md shadow-md transition-all uppercase text-xs tracking-wider">
+                        Simpan Rekam Data
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- SCRIPT LOGIKA UTAMA -->
+    <script>
+        // ==========================================
+        // KONFIGURASI APLIKASI UTAMA
+        // ==========================================
+        const IS_PREVIEW = true; // Set ke false jika di-deploy ke Blogger
+        const GAS_URL = "URL_DEPLOY_GAS_ANDA_DISINI";
+
+        let targetDate = new Date().getTime() + (1000 * 5); // Dummy 5 detik
+        let countdownInterval;
+        let adminToken = ""; 
+        let cacheDataSiswa = [];
+        let selectedExcelData = [];
+        let currentUserData = null; 
+        let generatedTwibbonURL = null; 
+        
+        let mockAdminPass = "edudigital"; 
+
+        // Update Tanggal Dummy ke tahun 2026
+        let dummyDate = new Date();
+        dummyDate.setFullYear(2026); dummyDate.setMonth(5); dummyDate.setDate(1); // 1 Juni 2026
+        
+        const DUMMY_DB = {
+            settings: { TANGGAL_PENGUMUMAN: dummyDate.toISOString() }, 
+            students: [
+                { NISN: "peserta", Nama_Siswa: "Ahmad Budi Santoso", Tempat_Lahir: "Bali", Tanggal_Lahir: "2010-05-12", Kelas: "9A", Status_Kelulusan: "LULUS" },
+                { NISN: "gagal", Nama_Siswa: "Citra Lestari", Tempat_Lahir: "Denpasar", Tanggal_Lahir: "2010-08-20", Kelas: "9B", Status_Kelulusan: "TIDAK LULUS" }
+            ],
+            logs: [
+                { Waktu: "24/05/2026 09:12:05", NISN: "98765", Nama_Siswa: "Bagus Setiawan", Kelas: "9A" }
+            ]
+        };
+
+        window.onload = () => { fetchSettings(); };
+
+        // ------------------------------------------
+        // ROUTING & VIEW LOGIC
+        // ------------------------------------------
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.remove('active');
+                setTimeout(() => { if(!el.classList.contains('active')) el.style.display = 'none'; }, 500);
+            });
+            const target = document.getElementById(viewId);
+            target.style.display = 'flex';
+            void target.offsetWidth; 
+            target.classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        // ------------------------------------------
+        // API WRAPPER
+        // ------------------------------------------
+        async function apiCall(action, payload = {}) {
+            if (IS_PREVIEW) return mockApi(action, payload);
+            try {
+                const response = await fetch(GAS_URL, { 
+                    method: 'POST', redirect: "follow",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify({ action, payload, token: adminToken }) 
+                });
+                return await response.json();
+            } catch (error) { return { status: "error", message: "Gagal terhubung ke server utama." }; }
+        }
+
+        function mockApi(action, payload) {
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    let res = { status: "error", message: "Aksi tidak diketahui" };
+                    if (action === 'getSettings') res = { status: "success", data: DUMMY_DB.settings };
+                    else if (action === 'loginAdmin') {
+                        if (payload.user === 'admin' && payload.pass === mockAdminPass) res = { status: "success", token: "mock-token" };
+                        else res = { status: "error", message: "Kredensial Administrator Tidak Valid." };
+                    }
+                    else if (action === 'loginSiswa') {
+                        const s = DUMMY_DB.students.find(x => x.NISN === payload.nisn);
+                        if (s && (payload.nisn === payload.pass || (payload.nisn === 'peserta' && payload.pass === 'edudigital'))) {
+                            DUMMY_DB.logs.unshift({
+                                Waktu: new Date().toLocaleString('id-ID'),
+                                NISN: s.NISN, Nama_Siswa: s.Nama_Siswa, Kelas: s.Kelas
+                            });
+                            res = { status: "success", data: s };
+                        }
+                        else res = { status: "error", message: "Identitas NISN tidak terdaftar atau Sandi salah." };
+                    }
+                    else if (action === 'getStudents') res = { status: "success", data: DUMMY_DB.students };
+                    else if (action === 'getLogs') res = { status: "success", data: DUMMY_DB.logs };
+                    else if (action === 'saveStudent') {
+                        if(payload.mode === 'add') DUMMY_DB.students.push(payload.data);
+                        else {
+                            let idx = DUMMY_DB.students.findIndex(x => x.NISN === payload.originalNisn);
+                            if(idx > -1) DUMMY_DB.students[idx] = payload.data;
+                        }
+                        res = { status: "success" };
+                    }
+                    else if (action === 'deleteStudent') {
+                        DUMMY_DB.students = DUMMY_DB.students.filter(x => x.NISN !== payload.nisn);
+                        res = { status: "success" };
+                    }
+                    else if (action === 'deleteAllStudents') {
+                        DUMMY_DB.students = [];
+                        res = { status: "success" };
+                    }
+                    else if (action === 'uploadStudents') {
+                        DUMMY_DB.students = [...DUMMY_DB.students, ...payload.data];
+                        res = { status: "success" };
+                    }
+                    else if (action === 'updateDate') {
+                        DUMMY_DB.settings.TANGGAL_PENGUMUMAN = payload.date;
+                        res = { status: "success" };
+                    }
+                    else if (action === 'changePassword') {
+                        mockAdminPass = payload.newPass;
+                        res = { status: "success" };
+                    }
+                    resolve(res);
+                }, 500);
+            });
+        }
+
+        // ------------------------------------------
+        // COUNTDOWN LOGIC
+        // ------------------------------------------
+        async function fetchSettings() {
+            const res = await apiCall('getSettings');
+            if (res.status === 'success' && res.data.TANGGAL_PENGUMUMAN) {
+                targetDate = new Date(res.data.TANGGAL_PENGUMUMAN).getTime();
+                const opt = { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute:'2-digit' };
+                document.getElementById('tgl-info').innerHTML = `<i class="far fa-calendar-alt text-academy-gold mr-1"></i> ${new Date(res.data.TANGGAL_PENGUMUMAN).toLocaleDateString('id-ID', opt)} WITA`;
+                
+                const isoDate = new Date(res.data.TANGGAL_PENGUMUMAN);
+                isoDate.setMinutes(isoDate.getMinutes() - isoDate.getTimezoneOffset());
+                document.getElementById('set-datetime').value = isoDate.toISOString().slice(0,16);
+            }
+            startCountdown();
+        }
+
+        function startCountdown() {
+            clearInterval(countdownInterval);
+            const w = document.getElementById('countdown-wrapper');
+            const b = document.getElementById('btn-cek-kelulusan');
+            
+            function updateTimer() {
+                const now = new Date().getTime();
+                const distance = targetDate - now;
+
+                if (distance <= 0) {
+                    clearInterval(countdownInterval);
+                    w.classList.add('hidden');
+                    b.classList.remove('hidden');
+                } else {
+                    w.classList.remove('hidden');
+                    b.classList.add('hidden');
+                    document.getElementById('cd-days').innerText = String(Math.floor(distance / (1000 * 60 * 60 * 24))).padStart(2, '0');
+                    document.getElementById('cd-hours').innerText = String(Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))).padStart(2, '0');
+                    document.getElementById('cd-minutes').innerText = String(Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+                    document.getElementById('cd-seconds').innerText = String(Math.floor((distance % (1000 * 60)) / 1000)).padStart(2, '0');
+                }
+            }
+            
+            updateTimer();
+            countdownInterval = setInterval(updateTimer, 1000);
+        }
+
+        // ------------------------------------------
+        // LOGIN SISWA & HASIL (PREMIUM CERTIFICATE)
+        // ------------------------------------------
+        async function handleLoginSiswa(e) {
+            e.preventDefault();
+            
+            document.getElementById('sfx-success').load(); document.getElementById('sfx-pop').load(); document.getElementById('sfx-fail').load();
+
+            const btn = document.getElementById('btn-submit-siswa');
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Memvalidasi...'; btn.disabled = true;
+
+            const nisn = document.getElementById('siswa-nisn').value;
+            const pass = document.getElementById('siswa-pass').value;
+
+            const res = await apiCall('loginSiswa', { nisn, pass });
+            btn.innerHTML = 'Verifikasi Identitas'; btn.disabled = false;
+
+            if (res.status === 'success') {
+                currentUserData = res.data; 
+                showResult(res.data);
+            } else {
+                Swal.fire({ icon: 'warning', title: 'Otentikasi Gagal', text: res.message, confirmButtonColor: '#1e3a8a' });
+            }
+        }
+
+        function showResult(data) {
+            document.getElementById('res-nisn').innerText = `NISN: ${data.NISN}`;
+            document.getElementById('res-nama').innerText = data.Nama_Siswa;
+            
+            let tglFormat = data.Tanggal_Lahir;
+            if(tglFormat) {
+                const d = new Date(tglFormat);
+                if(!isNaN(d)) tglFormat = d.toLocaleDateString('id-ID', {day:'2-digit', month:'long', year:'numeric'});
+            }
+            
+            document.getElementById('res-ttl').innerText = `${data.Tempat_Lahir || '-'}, ${tglFormat || '-'}`;
+            document.getElementById('res-kelas').innerText = data.Kelas || '-';
+            
+            const wrapperBox = document.getElementById('res-status-wrapper');
+            const statusBox = document.getElementById('res-status-box');
+            const fxContainer = document.getElementById('fx-container');
+            const btnDownload = document.getElementById('btn-download-twibbon');
+            const joyBg = document.getElementById('joy-bg-elements');
+            const resRibbon = document.getElementById('res-ribbon');
+            
+            const statusText = (data.Status_Kelulusan || "").toUpperCase();
+            fxContainer.innerHTML = ''; 
+            
+            if (statusText === 'LULUS') {
+                joyBg.classList.remove('opacity-0'); joyBg.classList.add('opacity-100');
+                resRibbon.classList.remove('hidden'); resRibbon.classList.add('flex');
+                
+                statusBox.innerHTML = "<span class='animate-lulus-loop'>LULUS</span>";
+                statusBox.className = "font-serif text-4xl md:text-5xl font-black tracking-widest text-academy-gold bg-clip-text drop-shadow-md";
+                wrapperBox.className = "w-full py-8 border-y border-academy-gold/40 bg-gradient-to-r from-academy-gold/0 via-academy-gold/10 to-academy-gold/0 relative overflow-hidden transition-all duration-500 mb-6";
+                
+                document.getElementById('res-pesan').innerHTML = "Selamat atas keberhasilan Anda menyelesaikan pendidikan di SMP Negeri 1 Dawan. Semoga ilmu yang didapat bermanfaat untuk jenjang selanjutnya.";
+                document.getElementById('res-pesan').className = "text-sm font-medium text-academy-navy leading-relaxed max-w-sm mx-auto mb-8 relative z-10";
+                
+                btnDownload.classList.remove('hidden');
+                btnDownload.classList.add('flex');
+                
+                setTimeout(() => {
+                    document.getElementById('sfx-pop').play().catch(()=>{});
+                    setTimeout(() => { document.getElementById('sfx-success').play().catch(()=>{}); }, 400);
+                }, 100);
+                triggerGoldConfetti();
+            } else {
+                joyBg.classList.add('opacity-0'); joyBg.classList.remove('opacity-100');
+                resRibbon.classList.add('hidden'); resRibbon.classList.remove('flex');
+
+                statusBox.innerHTML = "<span class='animate-gagal-loop'>TIDAK LULUS</span>";
+                statusBox.className = "font-serif text-3xl md:text-4xl font-black tracking-widest text-rose-600 drop-shadow-sm";
+                wrapperBox.className = "w-full py-6 border-y border-rose-200 bg-gradient-to-r from-rose-50/0 via-rose-100 to-rose-50/0 relative overflow-hidden transition-all duration-500 mb-6";
+                
+                document.getElementById('res-pesan').innerHTML = "Keputusan ini bersifat mutlak. Tetap semangat dan jadikan ini sebagai motivasi untuk terus belajar menjadi lebih baik.";
+                document.getElementById('res-pesan').className = "text-xs font-medium text-slate-500 leading-relaxed max-w-sm mx-auto mb-6 relative z-10";
+                
+                btnDownload.classList.add('hidden');
+                btnDownload.classList.remove('flex');
+                setTimeout(() => { document.getElementById('sfx-fail').play().catch(()=>{}); }, 100);
+            }
+            switchView('view-siswa-result');
+        }
+
+        function triggerGoldConfetti() {
+            var duration = 6 * 1000;
+            var animationEnd = Date.now() + duration;
+            // Emas, Kuning Emas, Putih, Abu-abu terang
+            var defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999999, colors: ['#fbbf24', '#f59e0b', '#ffffff', '#fef3c7'] };
+
+            function randomInRange(min, max) { return Math.random() * (max - min) + min; }
+            confetti({ particleCount: 150, spread: 100, origin: { y: 0.5 }, zIndex: 9999999, colors: defaults.colors, shapes: ['circle', 'square'] });
+
+            var interval = setInterval(function() {
+                var timeLeft = animationEnd - Date.now();
+                if (timeLeft <= 0) return clearInterval(interval);
+                var particleCount = 50 * (timeLeft / duration);
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } }));
+                confetti(Object.assign({}, defaults, { particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } }));
+            }, 250);
+        }
+
+        function logoutSiswa() {
+            currentUserData = null; generatedTwibbonURL = null;
+            document.getElementById('siswa-nisn').value = ''; document.getElementById('siswa-pass').value = '';
+            document.getElementById('fx-container').innerHTML = '';
+            const audios = ['sfx-pop', 'sfx-success', 'sfx-fail'];
+            audios.forEach(id => { let a = document.getElementById(id); a.pause(); a.currentTime = 0; });
+            switchView('view-home');
+        }
+
+        // ------------------------------------------
+        // KAMERA & TWIBBON GENERATOR ACADEMY STYLE
+        // ------------------------------------------
+        let videoStream = null;
+
+        async function openCameraModal() {
+            document.getElementById('camera-modal').style.display = 'flex';
+            resetCamera(); 
+            
+            const video = document.getElementById('camera-feed');
+            try {
+                videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
+                video.srcObject = videoStream;
+            } catch (err) {
+                console.error("Camera error:", err);
+                closeCameraModal();
+                Swal.fire({ icon: 'warning', title: 'Kamera Diblokir', text: 'Mohon izinkan akses kamera pada browser Anda.', confirmButtonColor: '#1e3a8a' });
+            }
+        }
+
+        function closeCameraModal() {
+            if(videoStream) { videoStream.getTracks().forEach(track => track.stop()); videoStream = null; }
+            document.getElementById('camera-modal').style.display = 'none';
+        }
+
+        function resetCamera() {
+            document.getElementById('step-hasil').style.display = 'none';
+            document.getElementById('step-kamera').style.display = 'flex';
+            document.getElementById('twibbon-preview').src = '';
+            generatedTwibbonURL = null;
+        }
+
+        const loadImageUrl = (src) => new Promise((resolve) => {
+            if(!src) return resolve(null);
+            const img = new Image(); img.crossOrigin = "Anonymous";
+            img.onload = () => resolve(img); img.onerror = () => resolve(null); img.src = src;
+        });
+
+        async function captureAndGenerateTwibbon() {
+            const video = document.getElementById('camera-feed');
+            const canvas = document.getElementById('camera-canvas');
+            const btnCap = document.getElementById('btn-capture');
+            const btnProc = document.getElementById('btn-processing');
+            
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.translate(canvas.width, 0); ctx.scale(-1, 1); // Mirror
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            const photoDataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            
+            btnCap.classList.add('hidden'); btnProc.classList.remove('hidden');
+
+            try {
+                generatedTwibbonURL = await createTwibbonMandiri(photoDataUrl);
+                document.getElementById('twibbon-preview').src = generatedTwibbonURL;
+                document.getElementById('step-kamera').style.display = 'none';
+                document.getElementById('step-hasil').style.display = 'flex';
+            } catch (e) {
+                console.error(e);
+                Swal.fire({ icon: 'error', title: 'Oops', text: 'Gagal merender foto.', confirmButtonColor: '#ef4444' });
+            } finally {
+                btnCap.classList.remove('hidden'); btnProc.classList.add('hidden');
+            }
+        }
+
+        // ========================================================
+        // ENGINE TWIBBON PREMIUM (NAVY & GOLD)
+        // ========================================================
+        async function createTwibbonMandiri(photoDataUrl) {
+            const cvs = document.createElement('canvas');
+            cvs.width = 1080; cvs.height = 1080;
+            const ctx = cvs.getContext('2d');
+            const d = currentUserData;
+
+            const [userPhoto, schoolLogo] = await Promise.all([
+                loadImageUrl(photoDataUrl),
+                loadImageUrl('https://i.ibb.co.com/BVGjXVL7/logo-baru.png') 
+            ]);
+
+            // 1. BG Navy Premium
+            ctx.fillStyle = '#1e3a8a'; // Navy Main
+            ctx.fillRect(0, 0, 1080, 1080);
+            
+            // Texture Diagonal Emas Lembut
+            ctx.strokeStyle = 'rgba(251, 191, 36, 0.05)';
+            ctx.lineWidth = 2;
+            for(let i = -1080; i < 2160; i += 40) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + 1080, 1080); ctx.stroke();
+            }
+
+            // Bingkai Luar Sertifikat Emas
+            ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 15;
+            ctx.strokeRect(30, 30, 1020, 1020);
+            ctx.strokeStyle = '#fde68a'; ctx.lineWidth = 3;
+            ctx.strokeRect(48, 48, 984, 984);
+
+            // 2. FOTO DALAM LINGKARAN BESAR
+            const photoCx = 540, photoCy = 540, radius = 350;
+            
+            // Lingkaran Emas
+            ctx.beginPath(); ctx.arc(photoCx, photoCy, radius + 20, 0, Math.PI*2);
+            ctx.fillStyle = '#fbbf24'; ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 30; ctx.fill();
+            ctx.shadowBlur = 0; // reset
+            
+            ctx.beginPath(); ctx.arc(photoCx, photoCy, radius + 8, 0, Math.PI*2);
+            ctx.fillStyle = '#ffffff'; ctx.fill();
+
+            // Potong & Gambar Foto
+            if(userPhoto) {
+                ctx.save();
+                ctx.beginPath(); ctx.arc(photoCx, photoCy, radius, 0, Math.PI*2); ctx.clip(); 
+
+                const imgRatio = userPhoto.width / userPhoto.height;
+                let drawW, drawH, drawX, drawY;
+                
+                if (imgRatio > 1) { 
+                    drawH = radius*2; drawW = userPhoto.width * ((radius*2) / userPhoto.height);
+                } else { 
+                    drawW = radius*2; drawH = userPhoto.height * ((radius*2) / userPhoto.width);
+                }
+                drawX = photoCx - (drawW/2); drawY = photoCy - (drawH/2);
+
+                ctx.drawImage(userPhoto, drawX, drawY, drawW, drawH);
+                ctx.restore();
+            }
+
+            // 3. TEKS ATAS (OFFICIAL ACADEMY)
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#fbbf24';
+            ctx.font = '700 30px "Inter", sans-serif'; 
+            ctx.letterSpacing = "5px";
+            ctx.fillText('ALUMNI ANGKATAN 2026', 540, 120);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '900 60px "Playfair Display", serif'; 
+            ctx.fillText('SMP NEGERI 1 DAWAN', 540, 175);
+
+            // 4. LOGO SEKOLAH BAWAH
+            if (schoolLogo) {
+                const logoSize = 140;
+                ctx.drawImage(schoolLogo, 540 - (logoSize/2), 900 - logoSize, logoSize, logoSize);
+            }
+
+            // 5. BANNER PITA EMAS "SAYA LULUS" (Menutupi bawah foto)
+            ctx.save();
+            ctx.translate(540, 840);
+            
+            // Bentuk Pita
+            ctx.beginPath();
+            ctx.moveTo(-350, -40); ctx.lineTo(350, -40); // Atas
+            ctx.lineTo(380, 0); ctx.lineTo(350, 40);     // Kanan Lancip
+            ctx.lineTo(-350, 40);                        // Bawah
+            ctx.lineTo(-380, 0);                         // Kiri Lancip
+            ctx.closePath();
+            
+            // Gradasi Emas
+            const pitaGrad = ctx.createLinearGradient(-350, 0, 350, 0);
+            pitaGrad.addColorStop(0, '#d97706'); pitaGrad.addColorStop(0.5, '#fbbf24'); pitaGrad.addColorStop(1, '#d97706');
+            ctx.fillStyle = pitaGrad;
+            ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowBlur = 15; ctx.shadowOffsetY = 8;
+            ctx.fill(); ctx.shadowBlur = 0; ctx.shadowOffsetY = 0;
+            
+            // Garis putih dalam pita
+            ctx.beginPath();
+            ctx.moveTo(-340, -30); ctx.lineTo(340, -30); ctx.lineTo(365, 0); ctx.lineTo(340, 30);
+            ctx.lineTo(-340, 30); ctx.lineTo(-365, 0); ctx.closePath();
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 2; ctx.stroke();
+
+            ctx.fillStyle = '#1e3a8a'; // Teks Navy
+            ctx.font = '900 45px "Inter", sans-serif'; 
+            ctx.fillText('RESMI DINYATAKAN LULUS', 0, 2);
+            ctx.restore();
+
+            // 6. NAMA SISWA DI BAWAH (Elegan Putih)
+            const namaSiswa = (d?.Nama_Siswa || 'SISWA BERPRESTASI').toUpperCase();
+            let fontSize = 40; ctx.font = `700 ${fontSize}px "Inter", sans-serif`; 
+            while (ctx.measureText(namaSiswa).width > 800 && fontSize > 20) { fontSize -= 2; ctx.font = `700 ${fontSize}px "Inter", sans-serif`; }
+            
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(namaSiswa, 540, 950);
+            
+            // Info Tambahan
+            ctx.fillStyle = '#94a3b8'; ctx.font = '600 20px "Inter", sans-serif';
+            ctx.fillText(`ID TERDAFTAR: ${d?.NISN || '1234567890'}`, 540, 990);
+
+            return cvs.toDataURL('image/jpeg', 0.95);
+        }
+
+        function downloadTwibbonAction() {
+            if(!generatedTwibbonURL) return;
+            const d = currentUserData;
+            const link = document.createElement('a');
+            link.download = `Sertifikat_Official_${d?.NISN || '123'}.jpg`;
+            link.href = generatedTwibbonURL;
+            link.click();
+            Swal.fire({ title: 'Diunduh', text: 'Desain berhasil disimpan. Selamat merayakan kelulusan!', icon: 'success', confirmButtonColor: '#1e3a8a' });
+        }
+
+        // ------------------------------------------
+        // LOGIN ADMIN & DASHBOARD
+        // ------------------------------------------
+        async function handleLoginAdmin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit-admin');
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>'; btn.disabled = true;
+
+            const pass = document.getElementById('admin-pass').value;
+            const res = await apiCall('loginAdmin', { user: 'admin', pass });
+            btn.innerHTML = 'Otorisasi'; btn.disabled = false;
+
+            if (res.status === 'success') {
+                adminToken = res.token; document.getElementById('admin-pass').value = '';
+                switchView('view-admin-dashboard'); loadDataSiswa();
+            } else {
+                Swal.fire({ icon: 'error', title: 'Otorisasi Gagal', text: res.message, confirmButtonColor: '#1e3a8a' });
+            }
+        }
+
+        function logoutAdmin() { adminToken = ""; switchView('view-home'); }
+
+        function switchAdminTab(target) {
+            document.querySelectorAll('.admin-tab').forEach(el => el.classList.add('hidden'));
+            document.getElementById(target).classList.remove('hidden');
+            
+            // Desktop nav
+            document.querySelectorAll('.admin-sidebar-btn').forEach(btn => {
+                if(btn.dataset.target === target) {
+                    btn.className = "flex items-center gap-3 px-4 py-3 rounded-md transition-all admin-sidebar-btn font-medium bg-white/10 border-l-2 border-academy-gold text-white";
+                } else {
+                    btn.className = "flex items-center gap-3 px-4 py-3 rounded-md transition-all admin-sidebar-btn font-medium text-white/60 hover:bg-white/5 border-l-2 border-transparent hover:text-white";
+                }
+            });
+
+            // Mobile nav
+            document.querySelectorAll('.admin-nav-btn').forEach(btn => {
+                if(btn.dataset.target === target) {
+                    btn.classList.replace('text-slate-400', 'text-academy-navy');
+                    btn.classList.replace('border-transparent', 'border-academy-navy');
+                } else {
+                    btn.classList.replace('text-academy-navy', 'text-slate-400');
+                    btn.classList.replace('border-academy-navy', 'border-transparent');
+                }
+            });
+
+            if(target === 'tab-log') loadDataLog();
+        }
+
+        // ------------------------------------------
+        // ADMIN CRUD LOGIC (DATA SISWA)
+        // ------------------------------------------
+        async function loadDataSiswa() {
+            const tbody = document.getElementById('tabel-siswa-body');
+            tbody.innerHTML = `
+                <div class="p-4 bg-white rounded-md border border-slate-200 flex items-center gap-4"><div class="w-10 h-10 rounded-full skeleton"></div><div class="flex-1 space-y-2"><div class="h-3 w-1/2 skeleton"></div><div class="h-2 w-1/3 skeleton"></div></div></div>
+                <div class="p-4 bg-white rounded-md border border-slate-200 flex items-center gap-4"><div class="w-10 h-10 rounded-full skeleton"></div><div class="flex-1 space-y-2"><div class="h-3 w-1/2 skeleton"></div><div class="h-2 w-1/3 skeleton"></div></div></div>
+            `;
+            
+            const res = await apiCall('getStudents');
+            if(res.status === 'success') { 
+                cacheDataSiswa = res.data || []; updateStats(); renderTable(); 
+            } else {
+                tbody.innerHTML = `<div class="text-center py-10 text-rose-500 font-bold">${res.message}</div>`;
+            }
+        }
+
+        function updateStats() {
+            const total = cacheDataSiswa.length;
+            const lulus = cacheDataSiswa.filter(s => (s.Status_Kelulusan || '').toUpperCase() === 'LULUS').length;
+            const gagal = total - lulus;
+            
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-lulus').innerText = lulus;
+            document.getElementById('stat-gagal').innerText = gagal;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('tabel-siswa-body');
+            const filter = document.getElementById('search-siswa').value.toLowerCase();
+            tbody.innerHTML = '';
+
+            let filtered = cacheDataSiswa.filter(s => (s.Nama_Siswa || '').toLowerCase().includes(filter) || (s.NISN || '').toLowerCase().includes(filter));
+
+            if(filtered.length === 0) {
+                tbody.innerHTML = '<div class="text-center py-16 text-slate-400 font-medium"><i class="fas fa-archive text-4xl mb-3 opacity-30"></i><br>Tidak ada data tercatat.</div>'; 
+                return;
+            }
+
+            filtered.forEach((s) => {
+                let isLulus = s.Status_Kelulusan === 'LULUS';
+                let statusBadge = isLulus 
+                    ? '<span class="bg-emerald-100 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider">LULUS</span>' 
+                    : '<span class="bg-rose-100 text-rose-700 border border-rose-200 px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider">TDK LULUS</span>';
+                
+                let div = document.createElement('div');
+                div.className = "flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white rounded-md border border-slate-200 shadow-sm hover:border-academy-gold/50 transition-colors gap-4";
+                
+                div.innerHTML = `
+                    <div class="flex items-center gap-4 overflow-hidden">
+                        <div class="w-10 h-10 rounded-full bg-slate-100 text-academy-navy flex items-center justify-center font-bold text-lg shrink-0 border border-slate-200">
+                            ${(s.Nama_Siswa || 'U').charAt(0).toUpperCase()}
+                        </div>
+                        <div class="flex flex-col w-full">
+                            <span class="font-bold text-sm text-academy-textMain leading-tight truncate">${s.Nama_Siswa}</span>
+                            <span class="text-[11px] text-slate-500 font-medium mt-1">NISN: ${s.NISN} • Kelas: ${s.Kelas || '-'}</span>
+                            <div class="mt-2">${statusBadge}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 sm:ml-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
+                        <button onclick='editSiswa(${JSON.stringify(s).replace(/'/g, "&#39;")})' class="flex-1 sm:flex-none text-slate-500 hover:text-academy-navy hover:bg-slate-50 py-2 px-3 rounded-md border border-slate-200 transition-colors font-bold text-xs"><i class="fas fa-pen"></i></button>
+                        <button onclick="hapusSiswa('${s.NISN}')" class="flex-1 sm:flex-none text-slate-500 hover:text-rose-600 hover:bg-rose-50 py-2 px-3 rounded-md border border-slate-200 transition-colors font-bold text-xs"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                `;
+                tbody.appendChild(div);
+            });
+        }
+
+        function filterTable() { renderTable(); }
+
+        // ------------------------------------------
+        // ADMIN LOG & UPLOAD LOGIC
+        // ------------------------------------------
+        async function loadDataLog() {
+            const tbody = document.getElementById('tabel-log-body');
+            tbody.innerHTML = '<div class="text-center py-20 text-slate-400 font-medium text-sm"><i class="fas fa-circle-notch fa-spin mr-2"></i> Mengunduh Log Aktivitas...</div>';
+            
+            const res = await apiCall('getLogs');
+            if(res.status === 'success') {
+                const logs = res.data || [];
+                document.getElementById('stat-total-log').innerText = logs.length;
+                
+                if(logs.length === 0) {
+                    tbody.innerHTML = '<div class="text-center py-16 text-slate-400 font-medium"><i class="fas fa-history text-4xl mb-3 opacity-30"></i><br>Belum ada rekaman akses.</div>';
+                    return;
+                }
+
+                tbody.innerHTML = logs.map(log => `
+                    <div class="flex items-center justify-between p-4 bg-white rounded-md border border-slate-200 shadow-sm">
+                        <div class="flex flex-col">
+                            <span class="font-bold text-sm text-academy-navy">${log.Nama_Siswa}</span>
+                            <span class="text-[11px] font-medium text-slate-500 mt-1">ID: ${log.NISN} • Kls: ${log.Kelas || '-'}</span>
+                        </div>
+                        <div class="flex flex-col items-end shrink-0 ml-2">
+                            <span class="text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded-sm border border-slate-200">${log.Waktu.split(' ')[0]}</span>
+                            <span class="text-[10px] text-slate-400 font-medium mt-1">${log.Waktu.split(' ')[1] || ''}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                tbody.innerHTML = `<div class="text-center py-10 text-rose-500 font-bold">${res.message}</div>`;
+            }
+        }
+
+        function downloadTemplate() {
+            const ws = XLSX.utils.aoa_to_sheet([
+                ["NISN", "Nama Siswa", "Tempat Lahir", "Tanggal Lahir", "Kelas", "Status Kelulusan"],
+                ["1234567890", "Contoh Lulus", "Denpasar", "2010-05-20", "9A", "LULUS"],
+                ["0987654321", "Contoh Gagal", "Badung", "2010-11-15", "9B", "TIDAK LULUS"]
+            ]);
+            const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Master"); XLSX.writeFile(wb, "Master_Kelulusan_SMPN1.xlsx");
+        }
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0]; if(!file) return;
+            document.getElementById('file-name-display').innerHTML = `<span class="text-academy-navy"><i class="fas fa-check-circle text-emerald-500"></i> ${file.name}</span>`;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const workbook = XLSX.read(evt.target.result, {type: 'binary', raw: false});
+                const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], {defval: ""});
+                selectedExcelData = json.map(row => ({
+                    NISN: String(row["NISN"] || row["nisn"] || "").trim(), 
+                    Nama_Siswa: String(row["Nama Siswa"] || row["nama siswa"] || row["Nama_Siswa"] || ""),
+                    Tempat_Lahir: String(row["Tempat Lahir"] || row["tempat lahir"] || ""), 
+                    Tanggal_Lahir: String(row["Tanggal Lahir"] || row["tanggal lahir"] || ""),
+                    Kelas: String(row["Kelas"] || row["kelas"] || ""), 
+                    Status_Kelulusan: String(row["Status Kelulusan"] || row["status kelulusan"] || row["Status_Kelulusan"] || "").trim().toUpperCase()
+                })).filter(r => r.NISN !== "");
+
+                if(selectedExcelData.length > 0) {
+                    const btn = document.getElementById('btn-process-excel'); 
+                    btn.classList.remove('hidden'); 
+                    btn.innerHTML = `<i class="fas fa-cogs"></i> Import ${selectedExcelData.length} Baris`;
+                }
+            };
+            reader.readAsBinaryString(file);
+        }
+
+        async function processUploadExcel() {
+            if(selectedExcelData.length === 0) return;
+            const btn = document.getElementById('btn-process-excel'); 
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Menulis Data...'; btn.disabled = true;
+            
+            const res = await apiCall('uploadStudents', { data: selectedExcelData });
+            
+            btn.classList.add('hidden'); btn.disabled = false; 
+            document.getElementById('file-excel').value = ''; 
+            document.getElementById('file-name-display').innerText = 'Pilih File Master Excel';
+            
+            if(res.status === 'success') { 
+                switchAdminTab('tab-data'); loadDataSiswa(); 
+                Swal.fire({ icon: 'success', title: 'Berhasil', confirmButtonColor: '#1e3a8a' }); 
+            }
+        }
+
+        // ------------------------------------------
+        // ADMIN CRUD MODAL & SETTINGS
+        // ------------------------------------------
+        function openModalSiswa(mode = 'add', data = null) {
+            const modal = document.getElementById('modal-siswa');
+            document.getElementById('crud-mode').value = mode;
+            document.getElementById('modal-title').innerHTML = mode === 'add' ? '<i class="fas fa-user-plus text-academy-gold mr-2 text-sm"></i> Registrasi Baru' : '<i class="fas fa-user-edit text-academy-gold mr-2 text-sm"></i> Modifikasi Data';
+            if(mode === 'add') {
+                document.getElementById('form-crud-siswa').reset();
+                document.getElementById('crud-original-nisn').value = '';
+            } else {
+                document.getElementById('crud-original-nisn').value = data.NISN;
+                document.getElementById('crud-nisn').value = data.NISN;
+                document.getElementById('crud-nama').value = data.Nama_Siswa;
+                document.getElementById('crud-tempat').value = data.Tempat_Lahir || '';
+                document.getElementById('crud-tanggal').value = data.Tanggal_Lahir || '';
+                document.getElementById('crud-kelas').value = data.Kelas || '';
+                document.getElementById('crud-status').value = data.Status_Kelulusan || 'LULUS';
+            }
+            modal.style.display = 'flex';
+            void modal.offsetWidth;
+            modal.classList.remove('opacity-0');
+        }
+
+        function closeModalSiswa() { document.getElementById('modal-siswa').style.display = 'none'; }
+        function editSiswa(data) { openModalSiswa('edit', data); }
+
+        async function saveDataSiswa(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-save-crud');
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Memproses...'; btn.disabled = true;
+
+            const payload = {
+                mode: document.getElementById('crud-mode').value, 
+                originalNisn: document.getElementById('crud-original-nisn').value,
+                data: {
+                    NISN: String(document.getElementById('crud-nisn').value).trim(),
+                    Nama_Siswa: document.getElementById('crud-nama').value,
+                    Tempat_Lahir: document.getElementById('crud-tempat').value,
+                    Tanggal_Lahir: document.getElementById('crud-tanggal').value,
+                    Kelas: document.getElementById('crud-kelas').value,
+                    Status_Kelulusan: document.getElementById('crud-status').value
+                }
+            };
+            const res = await apiCall('saveStudent', payload);
+            btn.innerHTML = 'Simpan Rekam Data'; btn.disabled = false;
+
+            if(res.status === 'success') { closeModalSiswa(); loadDataSiswa(); } 
+            else Swal.fire({ icon: 'error', text: res.message, confirmButtonColor: '#1e3a8a' });
+        }
+
+        function hapusSiswa(nisn) {
+            Swal.fire({
+                title: 'Hapus Rekaman?', text: "Tindakan ini permanen.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#f8fafc', confirmButtonText: 'Hapus', cancelButtonText: '<span class="text-slate-700">Batal</span>'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const res = await apiCall('deleteStudent', { nisn });
+                    if(res.status === 'success') loadDataSiswa();
+                }
+            })
+        }
+
+        function deleteAllData() {
+            Swal.fire({
+                title: 'Format Database?', text: "Seluruh data akan terhapus secara permanen dari sistem.", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', cancelButtonColor: '#f8fafc', confirmButtonText: 'Ya, Format', cancelButtonText: '<span class="text-slate-700">Batal</span>'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const res = await apiCall('deleteAllStudents');
+                    if(res.status === 'success') loadDataSiswa();
+                }
+            })
+        }
+
+        async function saveSettingDate(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button'); btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+            const res = await apiCall('updateDate', { date: document.getElementById('set-datetime').value });
+            btn.innerHTML = 'Terapkan Jadwal';
+            if(res.status === 'success') { fetchSettings(); Swal.fire({ icon: 'success', title: 'Tersimpan', showConfirmButton: false, timer: 1500 }); }
+        }
+
+        async function saveNewPassword(e) {
+            e.preventDefault();
+            const p1 = document.getElementById('set-new-pass').value; const p2 = document.getElementById('set-conf-pass').value;
+            if(p1 !== p2) return Swal.fire({ icon: 'error', text: 'Konfirmasi Sandi Gagal', confirmButtonColor: '#1e3a8a' });
+            
+            const btn = e.target.querySelector('button'); btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+            const res = await apiCall('changePassword', { newPass: p1 });
+            btn.innerHTML = 'Perbarui Kredensial';
+
+            if(res.status === 'success') { 
+                document.getElementById('set-new-pass').value = ''; document.getElementById('set-conf-pass').value = ''; 
+                Swal.fire({ icon: 'success', title: 'Kredensial Diperbarui', showConfirmButton: false, timer: 1500 }); 
+            }
+        }
+    </script>
+</body>
+</html>
